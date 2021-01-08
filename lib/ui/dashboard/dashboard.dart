@@ -1,9 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:unity_eye_tracker/backend/tcp_server.dart';
-import 'package:unity_eye_tracker/model/session.dart';
-import 'package:unity_eye_tracker/ui/dashboard/live/live_gaze_data.dart';
-import 'package:unity_eye_tracker/ui/theme.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_eye_tracker/backend/session/session_bloc.dart';
+import 'package:flutter_eye_tracker/backend/tcp_server.dart';
+import 'package:flutter_eye_tracker/model/session.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/live/live_gaze_data.dart';
+import 'package:flutter_eye_tracker/ui/theme.dart';
 import 'package:tinycolor/tinycolor.dart';
 
 class Dashboard extends StatefulWidget {
@@ -31,6 +34,22 @@ class _DashboardState extends State<Dashboard> {
         _pageIndex = _controller.page.round();
       });
     });
+    context.read<SessionBloc>().add(SessionEventLoad(widget.session));
+  }
+
+  Widget _loading() {
+    return Center(
+      child: SpinKitDoubleBounce(
+        color: Colors.black,
+        size: 50.0,
+      ),
+    );
+  }
+
+  Widget _failed() {
+    return Center(
+      child: Icon(Icons.error),
+    );
   }
 
   @override
@@ -50,58 +69,68 @@ class _DashboardState extends State<Dashboard> {
         ],
       ),
     );
-
-    var _pages = [
-      DashboardPage(title: "Live", icon: Icons.visibility, rows: [
-        DashboardRow(entries: [
-          DashboardEntry(title: "Controls", child: Text("another"), flex: 1)
-        ]),
-        DashboardRow(size: DashboardSize.Large, entries: [
-          DashboardEntry(
-              title: "Live Gaze Data",
-              flex: 2,
-              child: LiveGazeData(
-                session: widget.session,
-              )),
-        ])
-      ]),
-      DashboardPage(title: "Runs", icon: Icons.dns),
-      DashboardPage(title: "Calibrate", icon: Icons.calculate),
-    ];
-
-    return Scaffold(
-      body: Container(
-        color: Theming.background_blue_grey,
-        child: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            child: Row(
-              children: [
-                DashboardNavigator(
-                  pages: _pages,
-                  currentIndex: _pageIndex,
-                  key: UniqueKey(),
-                  onPageTapped: (i) => _controller.animateToPage(i,
-                      duration: _pageDuration, curve: _pageCurve),
-                ),
-                Expanded(
-                    child: Column(
-                  children: [
-                    _topBar,
-                    Expanded(
-                        child: PageView(
-                      controller: _controller,
-                      scrollDirection: Axis.vertical,
-                      children: _pages
-                          .map((page) => DashboardPageViewer(page: page))
-                          .toList(),
-                    ))
-                  ],
-                ))
-              ],
-            )),
-      ),
-    );
+    return Scaffold(body: BlocBuilder<SessionBloc, SessionState>(
+      builder: (context, state) {
+        print("Builder got: " + state.runtimeType.toString());
+        switch (state.runtimeType) {
+          case SessionStateFailed:
+            return _failed();
+          case SessionStateDone:
+            var typed = state as SessionStateDone;
+            var _pages = [
+              DashboardPage(title: "Live", icon: Icons.visibility, rows: [
+                DashboardRow(entries: [
+                  DashboardEntry(
+                      title: "Controls", child: Text("another"), flex: 1)
+                ]),
+                DashboardRow(size: DashboardSize.Large, entries: [
+                  DashboardEntry(
+                      title: "Live Gaze Data",
+                      flex: 2,
+                      child: LiveGazeData(
+                        session: typed.session,
+                      )),
+                ])
+              ]),
+              DashboardPage(title: "Runs", icon: Icons.dns),
+              DashboardPage(title: "Calibrate", icon: Icons.calculate),
+            ];
+            return Container(
+              color: Theming.background_blue_grey,
+              child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  child: Row(
+                    children: [
+                      DashboardNavigator(
+                        pages: _pages,
+                        currentIndex: _pageIndex,
+                        key: UniqueKey(),
+                        onPageTapped: (i) => _controller.animateToPage(i,
+                            duration: _pageDuration, curve: _pageCurve),
+                      ),
+                      Expanded(
+                          child: Column(
+                        children: [
+                          _topBar,
+                          Expanded(
+                              child: PageView(
+                            controller: _controller,
+                            scrollDirection: Axis.vertical,
+                            children: _pages
+                                .map((page) => DashboardPageViewer(page: page))
+                                .toList(),
+                          ))
+                        ],
+                      ))
+                    ],
+                  )),
+            );
+          default:
+            return _loading();
+        }
+      },
+    ));
   }
 }
 
@@ -186,7 +215,8 @@ class DashboardNavigator extends StatelessWidget {
 
   Widget _page(BuildContext context, DashboardPage page, int index) {
     return Padding(
-      padding: const EdgeInsets.all(2.0),
+      padding:
+          const EdgeInsets.only(top: 2.0, bottom: 2.0, left: 6.0, right: 2),
       child: Material(
         elevation: currentIndex == index ? 2.0 : 0,
         color: Colors.transparent,
@@ -203,7 +233,7 @@ class DashboardNavigator extends StatelessWidget {
                 : Colors.transparent,
             child: Padding(
               padding:
-                  const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+                  const EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
               child: Row(
                 children: [
                   Icon(

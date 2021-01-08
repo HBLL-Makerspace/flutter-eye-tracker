@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:unity_eye_tracker/model/json_message.dart';
+import 'package:flutter_eye_tracker/model/json_message.dart';
 
 part 'gaze_stream_event.dart';
 part 'gaze_stream_state.dart';

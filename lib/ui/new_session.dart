@@ -4,16 +4,12 @@ import 'package:filepicker_windows/filepicker_windows.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:unity_eye_tracker/backend/gaze_stream/gaze_stream_bloc.dart';
-import 'package:unity_eye_tracker/backend/tcp_server.dart';
-import 'package:unity_eye_tracker/backend/tcp_server/tcpserver_bloc.dart';
-import 'package:unity_eye_tracker/model/json_message.dart';
-import 'package:unity_eye_tracker/model/session.dart';
-import 'package:unity_eye_tracker/ui/dashboard/dashboard.dart';
+import 'package:flutter_eye_tracker/model/session.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/dashboard.dart';
+import 'package:flutter_eye_tracker/ui/provider.dart';
 
 class NewSession extends StatefulWidget {
   @override
@@ -73,19 +69,9 @@ class _NewSessionState extends State<NewSession> {
   }
 
   Widget _dashboard(BuildContext context) {
-    GazeStreamBloc _gazeStreamBloc = GazeStreamBloc();
-    TCPServer.on<GazeData>().listen((event) {
-      _gazeStreamBloc.add(GazeStreamEventData(event));
-    });
-    TCPServerBloc _serverBloc = TCPServerBloc();
-    _serverBloc.add(TCPServerEventStart());
-    return BlocProvider(
-      create: (context) => _serverBloc,
-      child: BlocProvider(
-        create: (context) => _gazeStreamBloc,
-        child: Dashboard(
-          session: Session(picture: _pictureFile),
-        ),
+    return BlocProviders(
+      child: Dashboard(
+        session: Session(picture: _pictureFile),
       ),
     );
   }

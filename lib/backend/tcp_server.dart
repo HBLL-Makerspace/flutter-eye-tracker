@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:unity_eye_tracker/model/client.dart';
-import 'package:unity_eye_tracker/model/json_message.dart';
-import 'package:unity_eye_tracker/model/tcp_message.dart';
+import 'package:flutter_eye_tracker/model/client.dart';
+import 'package:flutter_eye_tracker/model/json_message.dart';
+import 'package:flutter_eye_tracker/model/tcp_message.dart';
 import 'package:uuid/uuid.dart';
 
 const SERVER_ADDRESS = "localhost";
@@ -18,6 +18,7 @@ class TCPServer {
   static Map<Type, dynamic Function(Map<String, dynamic>)> _converters = {
     GazeData: (data) => GazeData.fromJson(data)
   };
+  static bool _running = false;
 
   static void _handleIncominMessage(Uint8List data) {
     // print("Got message: " + String.fromCharCodes(data));
@@ -48,14 +49,22 @@ class TCPServer {
 
   static void start(
       {String host = SERVER_ADDRESS, int port = SERVER_PORT}) async {
-    print("Starting the tcp server.");
-    _serverSocket = await ServerSocket.bind(SERVER_ADDRESS, SERVER_PORT);
-    _serverSocket.listen(_onClientConnect);
+    if (!_running) {
+      print("Starting the tcp server.");
+      _serverSocket = await ServerSocket.bind(SERVER_ADDRESS, SERVER_PORT);
+      _serverSocket.listen(_onClientConnect);
+      _running = true;
+    } else {
+      stop();
+      // Possible bug here, this only works for hot reload, should be removed.
+      start();
+    }
   }
 
   static void stop() {
     dataStream.forEach((key, value) => {value.close()});
     _serverSocket.close();
+    _running = false;
   }
 
   static void sendMessage(JsonMessage jsonMessage) {

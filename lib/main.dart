@@ -1,11 +1,10 @@
 import 'package:filepicker_windows/filepicker_windows.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:unity_eye_tracker/backend/tcp_server.dart';
-import 'package:unity_eye_tracker/backend/tcp_server/tcpserver_bloc.dart';
-import 'package:unity_eye_tracker/model/json_message.dart';
-import 'package:unity_eye_tracker/ui/start_page.dart';
-import 'package:unity_eye_tracker/ui/theme.dart';
+import 'package:flutter_eye_tracker/backend/tcp_server/tcpserver_bloc.dart';
+import 'package:flutter_eye_tracker/model/json_message.dart';
+import 'package:flutter_eye_tracker/ui/start_page.dart';
+import 'package:flutter_eye_tracker/ui/theme.dart';
 
 void main() {
   runApp(MyApp());

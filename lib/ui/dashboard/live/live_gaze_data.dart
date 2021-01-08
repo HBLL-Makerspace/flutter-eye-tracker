@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:unity_eye_tracker/backend/gaze_stream/gaze_stream_bloc.dart';
-import 'package:unity_eye_tracker/model/json_message.dart';
-import 'package:unity_eye_tracker/model/session.dart';
-import 'package:image/image.dart' as im;
+import 'package:flutter_eye_tracker/backend/gaze_stream/gaze_stream_bloc.dart';
+import 'package:flutter_eye_tracker/model/json_message.dart';
+import 'package:flutter_eye_tracker/model/session.dart';
 
 const IMAGE_SIZE = 500;
 
@@ -18,27 +17,9 @@ class LiveGazeData extends StatefulWidget {
 }
 
 class _LiveGazeDataState extends State<LiveGazeData> {
-  ui.Image image;
-  double ratio = 1;
-
-  void _updateImage() async {
-    final data = await widget.session.picture?.readAsBytes();
-    if (data != null) {
-      im.Image tex = im.decodeImage(data);
-      double texRatio = tex.width.toDouble() / tex.height.toDouble();
-      ui.Codec codec = await ui.instantiateImageCodec(im.encodePng(tex));
-      ui.FrameInfo frameInfo = await codec.getNextFrame();
-      setState(() {
-        image = frameInfo.image;
-        ratio = texRatio;
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    _updateImage();
   }
 
   @override
@@ -54,13 +35,14 @@ class _LiveGazeDataState extends State<LiveGazeData> {
 
     Widget _drawLiveView(GazeStreamState state) {
       return AspectRatio(
-        aspectRatio: ratio,
+        aspectRatio: widget.session.image.width.toDouble() /
+            widget.session.image.height.toDouble(),
         child: CustomPaint(
           painter: LiveGazePointCustomPainter(
               gaze: (state is GazeStreamDataState)
                   ? (state).gazeData
                   : GazeData(x: 0, y: 0),
-              image: image),
+              image: widget.session.image),
         ),
       );
     }
