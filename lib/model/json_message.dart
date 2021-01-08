@@ -69,3 +69,41 @@ class GazeData extends JsonMessage {
 
   Map<String, dynamic> toJson() => _$GazeDataToJson(this);
 }
+
+@JsonSerializable()
+class ClientConnected extends JsonMessage {
+  final String name;
+
+  ClientConnected({this.name});
+
+  factory ClientConnected.fromJson(Map<String, dynamic> json) =>
+      _$ClientConnectedFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ClientConnectedToJson(this);
+}
+
+@JsonSerializable()
+class ScreenUpdate extends JsonMessage {
+  final bool fulscreen;
+
+  ScreenUpdate({this.fulscreen});
+
+  factory ScreenUpdate.fromJson(Map<String, dynamic> json) =>
+      _$ScreenUpdateFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ScreenUpdateToJson(this);
+}
+
+@JsonSerializable()
+class PictureOffset extends JsonMessage {
+  final double x;
+  final double y;
+  final double z;
+
+  PictureOffset(this.x, this.y, this.z);
+
+  factory PictureOffset.fromJson(Map<String, dynamic> json) =>
+      _$PictureOffsetFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PictureOffsetToJson(this);
+}

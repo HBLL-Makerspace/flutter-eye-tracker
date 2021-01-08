@@ -58,3 +58,40 @@ Map<String, dynamic> _$GazeDataToJson(GazeData instance) => <String, dynamic>{
       'y': instance.y,
       'timestamp': instance.timestamp,
     };
+
+ClientConnected _$ClientConnectedFromJson(Map<String, dynamic> json) {
+  return ClientConnected(
+    name: json['name'] as String,
+  );
+}
+
+Map<String, dynamic> _$ClientConnectedToJson(ClientConnected instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+    };
+
+ScreenUpdate _$ScreenUpdateFromJson(Map<String, dynamic> json) {
+  return ScreenUpdate(
+    fulscreen: json['fulscreen'] as bool,
+  );
+}
+
+Map<String, dynamic> _$ScreenUpdateToJson(ScreenUpdate instance) =>
+    <String, dynamic>{
+      'fulscreen': instance.fulscreen,
+    };
+
+PictureOffset _$PictureOffsetFromJson(Map<String, dynamic> json) {
+  return PictureOffset(
+    (json['x'] as num)?.toDouble(),
+    (json['y'] as num)?.toDouble(),
+    (json['z'] as num)?.toDouble(),
+  );
+}
+
+Map<String, dynamic> _$PictureOffsetToJson(PictureOffset instance) =>
+    <String, dynamic>{
+      'x': instance.x,
+      'y': instance.y,
+      'z': instance.z,
+    };

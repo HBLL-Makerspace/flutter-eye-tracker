@@ -4,8 +4,8 @@ import 'package:flutter_eye_tracker/backend/gaze_stream/gaze_stream_bloc.dart';
 import 'package:flutter_eye_tracker/backend/session/session_bloc.dart';
 import 'package:flutter_eye_tracker/backend/tcp_server.dart';
 import 'package:flutter_eye_tracker/backend/tcp_server/tcpserver_bloc.dart';
+import 'package:flutter_eye_tracker/backend/viewer/viewer_bloc.dart';
 import 'package:flutter_eye_tracker/model/json_message.dart';
-import 'package:flutter_eye_tracker/model/session.dart';
 
 class BlocProviders extends StatelessWidget {
   final Widget child;
@@ -21,15 +21,20 @@ class BlocProviders extends StatelessWidget {
     TCPServerBloc _serverBloc = TCPServerBloc();
     _serverBloc.add(TCPServerEventStart());
     SessionBloc sessionBloc = SessionBloc();
-    return BlocProvider(
-      create: (context) => sessionBloc,
-      child: BlocProvider(
-        create: (context) => _serverBloc,
-        child: BlocProvider(
-          create: (context) => _gazeStreamBloc,
-          child: child,
-        ),
+
+    return MultiBlocProvider(providers: [
+      BlocProvider<SessionBloc>(
+        create: (context) => sessionBloc,
       ),
-    );
+      BlocProvider<TCPServerBloc>(
+        create: (context) => _serverBloc,
+      ),
+      BlocProvider<GazeStreamBloc>(
+        create: (context) => _gazeStreamBloc,
+      ),
+      BlocProvider<ViewerBloc>(
+        create: (context) => ViewerBloc(),
+      )
+    ], child: child);
   }
 }

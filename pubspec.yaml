@@ -35,6 +35,7 @@ dependencies:
   image: ^2.1.19
   tinycolor: ^1.0.3
   flutter_spinkit: ^4.1.2+1
+  path_provider: ^1.6.27
 
 
   # The following adds the Cupertino Icons font to your application.

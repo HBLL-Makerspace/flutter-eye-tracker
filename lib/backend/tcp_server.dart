@@ -16,7 +16,8 @@ class TCPServer {
   static ServerSocket _serverSocket;
   static Map<Type, StreamController> dataStream = {};
   static Map<Type, dynamic Function(Map<String, dynamic>)> _converters = {
-    GazeData: (data) => GazeData.fromJson(data)
+    GazeData: (data) => GazeData.fromJson(data),
+    ClientConnected: (data) => ClientConnected.fromJson(data),
   };
   static bool _running = false;
 
@@ -27,7 +28,7 @@ class TCPServer {
     dataStream.forEach((key, value) {
       if (key.toString() == jsonMessage.type && _converters.containsKey(key)) {
         // print("Got message for: $key");
-        // print(_converters[key](jsonDecode(jsonMessage.message)).toString());
+        print(_converters[key](jsonDecode(jsonMessage.message)).toString());
         value.add(_converters[key](jsonDecode(jsonMessage.message)));
       }
     });
@@ -63,6 +64,7 @@ class TCPServer {
 
   static void stop() {
     dataStream.forEach((key, value) => {value.close()});
+    dataStream.clear();
     _serverSocket.close();
     _running = false;
   }

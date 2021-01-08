@@ -89,8 +89,8 @@ class LiveGazePointCustomPainter extends CustomPainter {
 
     if (gaze != null) {
       Paint pointPainter = Paint()
-        ..color = Colors.purple
-        ..strokeWidth = 4
+        ..color = Colors.purpleAccent[200]
+        ..strokeWidth = 12
         ..strokeCap = StrokeCap.round;
       canvas.drawPoints(
           ui.PointMode.points,

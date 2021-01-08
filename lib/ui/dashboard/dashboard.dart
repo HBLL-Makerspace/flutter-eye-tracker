@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/live/controls.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/live/run_timer.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/live/viewer.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_eye_tracker/backend/session/session_bloc.dart';
 import 'package:flutter_eye_tracker/backend/tcp_server.dart';
@@ -40,7 +43,7 @@ class _DashboardState extends State<Dashboard> {
   Widget _loading() {
     return Center(
       child: SpinKitDoubleBounce(
-        color: Colors.black,
+        color: Theming.navy,
         size: 50.0,
       ),
     );
@@ -71,7 +74,6 @@ class _DashboardState extends State<Dashboard> {
     );
     return Scaffold(body: BlocBuilder<SessionBloc, SessionState>(
       builder: (context, state) {
-        print("Builder got: " + state.runtimeType.toString());
         switch (state.runtimeType) {
           case SessionStateFailed:
             return _failed();
@@ -80,8 +82,15 @@ class _DashboardState extends State<Dashboard> {
             var _pages = [
               DashboardPage(title: "Live", icon: Icons.visibility, rows: [
                 DashboardRow(entries: [
+                  DashboardEntry(title: "Controls", child: Controls(), flex: 1),
                   DashboardEntry(
-                      title: "Controls", child: Text("another"), flex: 1)
+                      title: "Run Timer", child: RunTimer(), flex: 1),
+                  DashboardEntry(
+                      title: "Viewer",
+                      child: Viewer(
+                        session: widget.session,
+                      ),
+                      flex: 1)
                 ]),
                 DashboardRow(size: DashboardSize.Large, entries: [
                   DashboardEntry(
