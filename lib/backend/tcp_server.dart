@@ -20,11 +20,34 @@ class TCPServer {
     ClientConnected: (data) => ClientConnected.fromJson(data),
   };
   static bool _running = false;
+  static Uint8List _data = Uint8List(1024);
+  static int _dataIndex = 0;
 
-  static void _handleIncominMessage(Uint8List data) {
-    // print("Got message: " + String.fromCharCodes(data));
-    TCPMessage jsonMessage =
-        TCPMessage.fromJson(jsonDecode(String.fromCharCodes(data)));
+  static void _handleIncomingData(Uint8List data) {
+    int index = 0;
+    int char = 0;
+    while (String.fromCharCode(char = data[index++]) != "\n") {
+      _data[_dataIndex++] = char;
+    }
+
+    // If there is enough for a message then process the message.
+    if (String.fromCharCode(char) == "\n") {
+      // print("Found message");
+      _handleIncominMessage();
+    }
+
+    // Continue until all the data in the list is handled.
+    // If there is no data left wait for some more to come.
+    if (index != data.length) {
+      _handleIncomingData(data.sublist(index));
+    }
+  }
+
+  static void _handleIncominMessage() {
+    String jsonString =
+        String.fromCharCodes(_data.sublist(0, _dataIndex)).trim();
+    // print("Got message: " + jsonString);
+    TCPMessage jsonMessage = TCPMessage.fromJson(jsonDecode(jsonString));
     dataStream.forEach((key, value) {
       if (key.toString() == jsonMessage.type && _converters.containsKey(key)) {
         // print("Got message for: $key");
@@ -32,6 +55,7 @@ class TCPServer {
         value.add(_converters[key](jsonDecode(jsonMessage.message)));
       }
     });
+    _dataIndex = 0; // Reset list
   }
 
   static Stream<T> on<T extends JsonMessage>() {
@@ -44,7 +68,7 @@ class TCPServer {
     print("Client connected");
     _unityEyeClient = Client(uid: Uuid().v4(), socket: socket);
     _unityEyeClient.socket.listen((data) {
-      _handleIncominMessage(data);
+      _handleIncomingData(data);
     });
   }
 

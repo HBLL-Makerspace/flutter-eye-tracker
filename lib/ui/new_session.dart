@@ -90,10 +90,12 @@ class _NewSessionState extends State<NewSession> {
                   if (_index != 0)
                     _controller.animateToPage(_index - 1,
                         duration: _pageDuration, curve: _pageCurve)
+                  else
+                    Navigator.pop(context)
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text("Cancel"),
+                  child: Text(_index != 0 ? "Previous" : "Cancel"),
                 ),
                 shape: StadiumBorder(),
               ),

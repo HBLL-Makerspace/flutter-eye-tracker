@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_eye_tracker/ui/dashboard/live/controls.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/live/live_eye_position.dart';
+import 'package:flutter_eye_tracker/ui/dashboard/live/live_heatmap.dart';
 import 'package:flutter_eye_tracker/ui/dashboard/live/run_timer.dart';
 import 'package:flutter_eye_tracker/ui/dashboard/live/viewer.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -99,6 +101,12 @@ class _DashboardState extends State<Dashboard> {
                       child: LiveGazeData(
                         session: typed.session,
                       )),
+                  DashboardEntry(
+                      title: "Live Heat Map", flex: 2, child: LiveHeatMap()),
+                ]),
+                DashboardRow(size: DashboardSize.Medium, entries: [
+                  DashboardEntry(
+                      title: "Eye Position Graph", child: LiveEyePosition())
                 ])
               ]),
               DashboardPage(title: "Runs", icon: Icons.dns),
@@ -196,8 +204,10 @@ class DashboardPageViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return page.rows != null && page.rows.isNotEmpty
-        ? ListView(
-            children: page.rows.map((e) => _row(e)).toList(),
+        ? Scrollbar(
+            child: ListView(
+              children: page.rows.map((e) => _row(e)).toList(),
+            ),
           )
         : Center(
             child: Text("Nothing is here :("),

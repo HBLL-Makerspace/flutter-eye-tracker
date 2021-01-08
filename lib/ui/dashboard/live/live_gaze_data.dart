@@ -24,15 +24,6 @@ class _LiveGazeDataState extends State<LiveGazeData> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> _dataFromState(GazeStreamState state) {
-      if (state.runtimeType == GazeStreamDataState) {
-        var typed = state as GazeStreamDataState;
-        return [Text("X: ${typed.gazeData.x}"), Text("Y: ${typed.gazeData.y}")];
-      } else {
-        return [Container()];
-      }
-    }
-
     Widget _drawLiveView(GazeStreamState state) {
       return AspectRatio(
         aspectRatio: widget.session.image.width.toDouble() /
@@ -84,7 +75,6 @@ class LiveGazePointCustomPainter extends CustomPainter {
           canvas,
           Paint(),
           BoxFit.fill);
-      // canvas.drawImage(image, Offset.zero, Paint());
     }
 
     if (gaze != null) {
