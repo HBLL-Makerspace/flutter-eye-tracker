@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_eye_tracker/backend/run_timer/run_timer_bloc.dart';
 
 class RunTimer extends StatefulWidget {
   @override
@@ -20,10 +22,24 @@ class _RunTimerState extends State<RunTimer>
   }
 
   Widget _timer(BuildContext context) {
-    return Center(
-        child: Text(
-      "00:00:00",
-      style: Theme.of(context).textTheme.headline2,
+    String _printDuration(Duration duration) {
+      String twoDigits(int n) => n.toString().padLeft(2, "0");
+      String twoDigitMinutes = twoDigits(duration.inMinutes);
+      String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+      String twoDigitMilliseconds =
+          twoDigits(duration.inMilliseconds.remainder(60));
+      return "$twoDigitMinutes:$twoDigitSeconds.$twoDigitMilliseconds";
+    }
+
+    return Center(child: BlocBuilder<RunTimerBloc, RunTimerState>(
+      builder: (context, state) {
+        String sDuration =
+            "${state.elapsed.inMinutes}:${(state.elapsed.inSeconds.remainder(60))}.${(state.elapsed.inMilliseconds.remainder(60))}";
+        return Text(
+          _printDuration(state.elapsed),
+          style: Theme.of(context).textTheme.headline2,
+        );
+      },
     ));
   }
 
@@ -32,13 +48,13 @@ class _RunTimerState extends State<RunTimer>
       message: _isRunning ? "Stop Run" : "New Run",
       child: MaterialButton(
         onPressed: () {
-          if (_isRunning)
-            _animationController.reverse();
-          else
-            _animationController.forward();
-          setState(() {
-            _isRunning = !_isRunning;
-          });
+          if (_isRunning) {
+            // _animationController.reverse();
+            context.read<RunTimerBloc>().add(RunTimerEventStop());
+          } else {
+            // _animationController.forward();
+            context.read<RunTimerBloc>().add(RunTimerEventStart());
+          }
         },
         color: _isRunning ? Colors.red[300] : Colors.green[300],
         textColor: Colors.white,
@@ -54,17 +70,33 @@ class _RunTimerState extends State<RunTimer>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        children: [
-          Expanded(
-            child: _timer(context),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _startButton(),
-          )
-        ],
+    return BlocListener<RunTimerBloc, RunTimerState>(
+      listener: (context, state) {
+        print(state);
+        if (state is RunTimerRunning) {
+          this._animationController.forward();
+          setState(() {
+            _isRunning = true;
+          });
+        } else {
+          this._animationController.reverse();
+          setState(() {
+            _isRunning = false;
+          });
+        }
+      },
+      child: Container(
+        child: Column(
+          children: [
+            Expanded(
+              child: _timer(context),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _startButton(),
+            )
+          ],
+        ),
       ),
     );
   }

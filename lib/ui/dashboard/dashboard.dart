@@ -133,7 +133,7 @@ class _DashboardState extends State<Dashboard> {
                           Expanded(
                               child: PageView(
                             controller: _controller,
-                            scrollDirection: Axis.vertical,
+                            scrollDirection: Axis.horizontal,
                             children: _pages
                                 .map((page) => DashboardPageViewer(page: page))
                                 .toList(),
@@ -203,9 +203,13 @@ class DashboardPageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ScrollController _scrollController = ScrollController();
     return page.rows != null && page.rows.isNotEmpty
         ? Scrollbar(
+            isAlwaysShown: true,
+            controller: _scrollController,
             child: ListView(
+              controller: _scrollController,
               children: page.rows.map((e) => _row(e)).toList(),
             ),
           )

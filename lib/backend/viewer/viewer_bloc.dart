@@ -32,6 +32,8 @@ class ViewerBloc extends Bloc<ViewerEvent, ViewerState> {
         Directory appDocDir = Directory.current;
         _unityEyeApp = await Process.start(
             appDocDir.path + "/unity_eye/Unity Eye.exe", []);
+        await _unityEyeApp.exitCode;
+        yield ViewerStateClosed();
         break;
       case ViewerEventConnected:
         if (_session != null)
