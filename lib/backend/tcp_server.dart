@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 const SERVER_ADDRESS = "localhost";
 const SERVER_PORT = 8052;
+final int EOM = 0;
 
 class TCPServer {
   static Client _unityEyeClient;
@@ -20,33 +21,35 @@ class TCPServer {
     ClientConnected: (data) => ClientConnected.fromJson(data),
   };
   static bool _running = false;
-  static Uint8List _data = Uint8List(1024);
-  static int _dataIndex = 0;
+  // static Uint8List _data = Uint8List(1024);
+  static List<int> _data = [];
 
   static void _handleIncomingData(Uint8List data) {
-    int index = 0;
-    int char = 0;
-    while (String.fromCharCode(char = data[index++]) != "\n") {
-      _data[_dataIndex++] = char;
+    // print("Incoming Data: " + String.fromCharCodes(data));
+    // print("Looking for $EOM in ${data.toList()}");
+    int _index = data.indexOf(EOM); // Look for end of message.
+    // print("Found index at: $_index");
+
+    // If the end of message is in the data then proccess,
+    // else just copy over.
+    if (_index == -1) {
+      _data.addAll(data);
+      return;
     }
 
-    // If there is enough for a message then process the message.
-    if (String.fromCharCode(char) == "\n") {
-      // print("Found message");
-      _handleIncominMessage();
-    }
+    Uint8List _msg = data.sublist(0, _index);
+    Uint8List _rest = data.sublist(_index + 1);
 
-    // Continue until all the data in the list is handled.
-    // If there is no data left wait for some more to come.
-    if (index != data.length) {
-      _handleIncomingData(data.sublist(index));
-    }
+    _data.addAll(_msg);
+    _handleIncomingMessage();
+
+    if (_rest.isNotEmpty) _handleIncomingData(_rest);
   }
 
-  static void _handleIncominMessage() {
-    String jsonString =
-        String.fromCharCodes(_data.sublist(0, _dataIndex)).trim();
-    // print("Got message: " + jsonString);
+  static void _handleIncomingMessage() {
+    // print("Converting: ${_data.toList()}");
+    String jsonString = String.fromCharCodes(_data).trim();
+    // print("Got message: " + jsonString + " end");
     TCPMessage jsonMessage = TCPMessage.fromJson(jsonDecode(jsonString));
     dataStream.forEach((key, value) {
       if (key.toString() == jsonMessage.type && _converters.containsKey(key)) {
@@ -55,7 +58,7 @@ class TCPServer {
         value.add(_converters[key](jsonDecode(jsonMessage.message)));
       }
     });
-    _dataIndex = 0; // Reset list
+    _data = [];
   }
 
   static Stream<T> on<T extends JsonMessage>() {
@@ -79,6 +82,7 @@ class TCPServer {
       _serverSocket = await ServerSocket.bind(SERVER_ADDRESS, SERVER_PORT);
       _serverSocket.listen(_onClientConnect);
       _running = true;
+      _data = [];
     } else {
       stop();
       // Possible bug here, this only works for hot reload, should be removed.
@@ -89,6 +93,7 @@ class TCPServer {
   static void stop() {
     dataStream.forEach((key, value) => {value.close()});
     dataStream.clear();
+    _data = [];
     _serverSocket.close();
     _running = false;
   }
