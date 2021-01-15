@@ -1,16 +1,12 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_eye_tracker/ui/dashboard/live/controls.dart';
-import 'package:flutter_eye_tracker/ui/dashboard/live/live_eye_position.dart';
-import 'package:flutter_eye_tracker/ui/dashboard/live/live_heatmap.dart';
-import 'package:flutter_eye_tracker/ui/dashboard/live/run_timer.dart';
-import 'package:flutter_eye_tracker/ui/dashboard/live/viewer.dart';
+import 'package:flutter_eye_tracker/ui/routers/dashboard_router.gr.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_eye_tracker/backend/session/session_bloc.dart';
 import 'package:flutter_eye_tracker/backend/tcp_server.dart';
 import 'package:flutter_eye_tracker/model/session.dart';
-import 'package:flutter_eye_tracker/ui/dashboard/live/live_gaze_data.dart';
 import 'package:flutter_eye_tracker/ui/theme.dart';
 import 'package:tinycolor/tinycolor.dart';
 
@@ -24,22 +20,19 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  int _pageIndex = 0;
-  PageController _controller;
-
-  final _pageDuration = Duration(milliseconds: 300);
-  final _pageCurve = Curves.easeInOut;
+  GlobalKey _navKey = GlobalKey();
+  ChangeRouteObserver routeObserver;
+  DashboardController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController();
-    _controller.addListener(() {
-      setState(() {
-        _pageIndex = _controller.page.round();
-      });
-    });
     context.read<SessionBloc>().add(SessionEventLoad(widget.session));
+    routeObserver = ChangeRouteObserver(onPathChanged: (val) {
+      if (_controller != null) {
+        _controller.updatePath(val);
+      }
+    });
   }
 
   Widget _loading() {
@@ -80,37 +73,13 @@ class _DashboardState extends State<Dashboard> {
           case SessionStateFailed:
             return _failed();
           case SessionStateDone:
-            var typed = state as SessionStateDone;
-            var _pages = [
-              DashboardPage(title: "Live", icon: Icons.visibility, rows: [
-                DashboardRow(entries: [
-                  DashboardEntry(title: "Controls", child: Controls(), flex: 1),
-                  DashboardEntry(
-                      title: "Run Timer", child: RunTimer(), flex: 1),
-                  DashboardEntry(
-                      title: "Viewer",
-                      child: Viewer(
-                        session: widget.session,
-                      ),
-                      flex: 1)
-                ]),
-                DashboardRow(size: DashboardSize.Large, entries: [
-                  DashboardEntry(
-                      title: "Live Gaze Data",
-                      flex: 2,
-                      child: LiveGazeData(
-                        session: typed.session,
-                      )),
-                  DashboardEntry(
-                      title: "Live Heat Map", flex: 2, child: LiveHeatMap()),
-                ]),
-                DashboardRow(size: DashboardSize.Medium, entries: [
-                  DashboardEntry(
-                      title: "Eye Position Graph", child: LiveEyePosition())
-                ])
-              ]),
-              DashboardPage(title: "Runs", icon: Icons.dns),
-              DashboardPage(title: "Calibrate", icon: Icons.calculate),
+            var _routes = [
+              DashboardRoute(title: "Live", icon: Icons.visibility, path: "/"),
+              DashboardRoute(title: "Runs", icon: Icons.dns, path: "/runs"),
+              DashboardRoute(
+                  title: "Calibrate",
+                  icon: Icons.calculate,
+                  path: "/calibration"),
             ];
             return Container(
               color: Theming.background_blue_grey,
@@ -120,24 +89,24 @@ class _DashboardState extends State<Dashboard> {
                   child: Row(
                     children: [
                       DashboardNavigator(
-                        pages: _pages,
-                        currentIndex: _pageIndex,
+                        pages: _routes,
+                        onCreate: (val) => {_controller = val},
                         key: UniqueKey(),
-                        onPageTapped: (i) => _controller.animateToPage(i,
-                            duration: _pageDuration, curve: _pageCurve),
+                        onPageTapped: (path) =>
+                            (_navKey.currentState as ExtendedNavigatorState)
+                                .popAndPush(path),
                       ),
                       Expanded(
                           child: Column(
                         children: [
                           _topBar,
                           Expanded(
-                              child: PageView(
-                            controller: _controller,
-                            scrollDirection: Axis.horizontal,
-                            children: _pages
-                                .map((page) => DashboardPageViewer(page: page))
-                                .toList(),
-                          ))
+                            child: ExtendedNavigator(
+                              key: _navKey,
+                              observers: [routeObserver],
+                              router: DashboardRouter(),
+                            ),
+                          )
                         ],
                       ))
                     ],
@@ -151,11 +120,22 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-class DashboardPageViewer extends StatelessWidget {
+class DashboardController {
+  final ValueChanged<String> updatePath;
+
+  DashboardController(this.updatePath);
+}
+
+class DashboardPageViewer extends StatefulWidget {
   final DashboardPage page;
 
   const DashboardPageViewer({Key key, this.page}) : super(key: key);
 
+  @override
+  _DashboardPageViewerState createState() => _DashboardPageViewerState();
+}
+
+class _DashboardPageViewerState extends State<DashboardPageViewer> {
   double _getHeight(DashboardSize size) {
     switch (size) {
       case DashboardSize.Small:
@@ -204,13 +184,13 @@ class DashboardPageViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ScrollController _scrollController = ScrollController();
-    return page.rows != null && page.rows.isNotEmpty
+    return widget.page.rows != null && widget.page.rows.isNotEmpty
         ? Scrollbar(
             isAlwaysShown: true,
             controller: _scrollController,
             child: ListView(
               controller: _scrollController,
-              children: page.rows.map((e) => _row(e)).toList(),
+              children: widget.page.rows.map((e) => _row(e)).toList(),
             ),
           )
         : Center(
@@ -219,15 +199,21 @@ class DashboardPageViewer extends StatelessWidget {
   }
 }
 
-class DashboardNavigator extends StatelessWidget {
-  final List<DashboardPage> pages;
-  final int currentIndex;
-  final ValueChanged<int> onPageTapped;
+class DashboardNavigator extends StatefulWidget {
+  final List<DashboardRoute> pages;
+  final ValueChanged<String> onPageTapped;
+  final ValueChanged<DashboardController> onCreate;
 
   const DashboardNavigator(
-      {Key key, this.pages, this.currentIndex, this.onPageTapped})
+      {Key key, this.pages, this.onPageTapped, this.onCreate})
       : super(key: key);
 
+  @override
+  _DashboardNavigatorState createState() => _DashboardNavigatorState();
+}
+
+class _DashboardNavigatorState extends State<DashboardNavigator> {
+  String route = "/";
   Widget _pages(List<Widget> children) {
     return Expanded(
       child: ListView(
@@ -236,22 +222,32 @@ class DashboardNavigator extends StatelessWidget {
     );
   }
 
-  Widget _page(BuildContext context, DashboardPage page, int index) {
+  bool _same(String route, String path) {
+    if (path.length < route.length) {
+      String sub = route.substring(0, path.length);
+      return sub == route;
+    } else {
+      String sub = path.substring(0, route.length);
+      return sub == path;
+    }
+  }
+
+  Widget _page(BuildContext context, DashboardRoute page) {
     return Padding(
       padding:
           const EdgeInsets.only(top: 2.0, bottom: 2.0, left: 6.0, right: 2),
       child: Material(
-        elevation: currentIndex == index ? 2.0 : 0,
+        elevation: _same(route, page.path) ? 2.0 : 0,
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(8.0),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           splashColor: Theming.royal,
           onTap: () {
-            onPageTapped(index);
+            widget.onPageTapped(page.path);
           },
           child: Container(
-            color: currentIndex == index
+            color: _same(route, page.path)
                 ? TinyColor(Theming.background_blue_grey).darken(10).color
                 : Colors.transparent,
             child: Padding(
@@ -262,14 +258,15 @@ class DashboardNavigator extends StatelessWidget {
                   Icon(
                     page.icon,
                     size: 18,
-                    color: currentIndex == index ? Theming.royal : Theming.navy,
+                    color:
+                        _same(route, page.path) ? Theming.royal : Theming.navy,
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
                     child: Text(
                       page.title,
                       style: Theme.of(context).textTheme.subtitle1.copyWith(
-                          color: currentIndex == index
+                          color: _same(route, page.path)
                               ? Theming.royal
                               : Theming.navy),
                     ),
@@ -285,6 +282,13 @@ class DashboardNavigator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    widget.onCreate(DashboardController((value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          route = value;
+        });
+      });
+    }));
     var _heading = Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -315,9 +319,7 @@ class DashboardNavigator extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _heading,
-          _pages(pages
-              .map((page) => _page(context, page, pages.indexOf(page)))
-              .toList())
+          _pages(widget.pages.map((page) => _page(context, page)).toList())
         ],
       ),
     );
@@ -351,3 +353,22 @@ class DashboardEntry {
 }
 
 enum DashboardSize { Small, Medium, Large }
+
+class DashboardRoute {
+  final String title;
+  final IconData icon;
+  final String path;
+
+  DashboardRoute({this.title, this.icon, this.path});
+}
+
+class ChangeRouteObserver extends NavigatorObserver {
+  final ValueChanged<String> onPathChanged;
+
+  ChangeRouteObserver({this.onPathChanged});
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+    if (onPathChanged != null) onPathChanged(route.settings.name);
+  }
+}

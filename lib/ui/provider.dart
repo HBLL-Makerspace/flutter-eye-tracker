@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_eye_tracker/backend/gaze_stream/gaze_stream_bloc.dart';
+import 'package:flutter_eye_tracker/backend/run_manager/run_manager_bloc.dart';
 import 'package:flutter_eye_tracker/backend/run_timer/run_timer_bloc.dart';
 import 'package:flutter_eye_tracker/backend/session/session_bloc.dart';
 import 'package:flutter_eye_tracker/backend/tcp_server.dart';
@@ -38,6 +39,9 @@ class BlocProviders extends StatelessWidget {
       ),
       BlocProvider<RunTimerBloc>(
         create: (context) => RunTimerBloc(),
+      ),
+      BlocProvider<RunManagerBloc>(
+        create: (context) => RunManagerBloc(),
       ),
     ], child: child);
   }

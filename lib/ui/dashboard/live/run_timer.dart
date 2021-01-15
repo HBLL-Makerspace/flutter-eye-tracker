@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_eye_tracker/backend/run_manager/run_manager_bloc.dart';
 import 'package:flutter_eye_tracker/backend/run_timer/run_timer_bloc.dart';
 
 class RunTimer extends StatefulWidget {
@@ -51,9 +52,11 @@ class _RunTimerState extends State<RunTimer>
           if (_isRunning) {
             // _animationController.reverse();
             context.read<RunTimerBloc>().add(RunTimerEventStop());
+            context.read<RunManagerBloc>().add(RunManagerStopRun());
           } else {
             // _animationController.forward();
             context.read<RunTimerBloc>().add(RunTimerEventStart());
+            context.read<RunManagerBloc>().add(RunManagerStartRun());
           }
         },
         color: _isRunning ? Colors.red[300] : Colors.green[300],
@@ -72,7 +75,6 @@ class _RunTimerState extends State<RunTimer>
   Widget build(BuildContext context) {
     return BlocListener<RunTimerBloc, RunTimerState>(
       listener: (context, state) {
-        print(state);
         if (state is RunTimerRunning) {
           this._animationController.forward();
           setState(() {

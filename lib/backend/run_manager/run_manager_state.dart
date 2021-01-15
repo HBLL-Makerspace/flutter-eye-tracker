@@ -5,13 +5,16 @@ abstract class RunManagerState {}
 
 class RunManagerInitial extends RunManagerState {}
 
-class RunManagerRunning extends RunManagerState {}
+class RunManagerRunning extends RunManagerState {
+  final RunBuilder runBuilder;
+
+  RunManagerRunning(this.runBuilder);
+}
+
+class RunManagerRunStopped extends RunManagerState {
+  final RunBuilder runBuilder;
+
+  RunManagerRunStopped(this.runBuilder);
+}
 
 class RunManagerNoRun extends RunManagerState {}
-
-class RunInfo {
-  final GazeData currentGazeData;
-  final GazeData gazeWindow;
-
-  RunInfo({this.currentGazeData, this.gazeWindow});
-}
